@@ -1,12 +1,12 @@
-package postgres
+package goods
 
-type Projects struct {
+type Project struct {
 	Id        int    `json:"-"`
 	Name      string `json:"name"`
 	CreatedAt string `json:"created_at"`
 }
 
-type Goods struct {
+type Good struct {
 	Id          int    `json:"-"`
 	ProjectId   int    `json:"project_id"`
 	Name        string `json:"name"`
@@ -14,4 +14,16 @@ type Goods struct {
 	Priority    int    `json:"priority"`
 	Removed     bool   `json:"removed"`
 	CreatedAt   string `json:"created_at"`
+}
+
+type Meta struct {
+	Total   int
+	Removed int
+	Limit   int
+	Offset  int
+}
+
+type GetResponse struct {
+	Meta  Meta
+	Goods []Good
 }
