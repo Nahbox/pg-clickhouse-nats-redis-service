@@ -5,16 +5,15 @@ CREATE TABLE IF NOT EXISTS projects (
     created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
--- Создание индексов
-CREATE INDEX IF NOT EXISTS idx_projects_id ON projects (id);
+INSERT INTO projects (name) VALUES ('First record');
 
 -- Создание таблицы "goods"
 CREATE TABLE IF NOT EXISTS goods (
     id SERIAL PRIMARY KEY,
-    project_id INT PRIMARY KEY,
+    project_id INT REFERENCES projects (id),
     name TEXT NOT NULL,
     description TEXT,
-    priority INT DEFAULT (SELECT COALESCE(MAX(priority), 0) + 1 FROM goods) NOT NULL,
+    priority SERIAL NOT NULL,
     removed BOOL DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
