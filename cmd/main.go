@@ -42,14 +42,17 @@ func main() {
 	defer pgdb.Close()
 
 	// Подключение к redis
-	rdb, err := redis.New()
+	rdb, err := redis.New(cfg.RConfig)
 	if err != nil {
 		log.Fatal("init redis db", err)
 	}
 	defer rdb.Close()
 
 	// Подключение к clickhouse
-	chdb, err := clickhouse.New()
+	chdb, err := clickhouse.New(cfg.CHConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer chdb.Close()
 
 	gRepo := goodsRepository.NewGoodsRepo(pgdb)
