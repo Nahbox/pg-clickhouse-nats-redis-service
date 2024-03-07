@@ -9,17 +9,18 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/ClickHouse/clickhouse-go/v2"
-
 	"github.com/go-chi/chi/v5"
 
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/config"
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/db/clickhouse"
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/db/postgres"
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/db/redis"
 	goodsHandler "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/handlers/goods"
 	goodsRepository "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/repository/goods/postgres"
+	kvstoreRepository "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/repository/kvstore/redis"
 	goodsService "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/service/goods"
 )
 
@@ -33,26 +34,28 @@ func main() {
 		log.Fatal("read config from env", err)
 	}
 
-	database, err := postgres.New(cfg.PgConfig)
+	// Подключение к postgres
+	pgdb, err := postgres.New(cfg.PgConfig)
 	if err != nil {
-		log.Fatal("init db", err)
+		log.Fatal("init postgres db", err)
 	}
-	defer database.Close()
+	defer pgdb.Close()
 
-	gRepo, err := goodsRepository.NewGoodsRepo(database)
+	// Подключение к redis
+	rdb, err := redis.New()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("init redis db", err)
 	}
+	defer rdb.Close()
 
-	gService, err := goodsService.NewService(gRepo)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Подключение к clickhouse
+	chdb, err := clickhouse.New()
+	defer chdb.Close()
 
-	gHandler, err := goodsHandler.NewGoodsHandler(gService)
-	if err != nil {
-		log.Fatal(err)
-	}
+	gRepo := goodsRepository.NewGoodsRepo(pgdb)
+	rRepo := kvstoreRepository.NewKVStoreRepo(rdb)
+	gService := goodsService.NewService(gRepo, rRepo)
+	gHandler := goodsHandler.NewGoodsHandler(gService)
 
 	router := chi.NewRouter()
 
