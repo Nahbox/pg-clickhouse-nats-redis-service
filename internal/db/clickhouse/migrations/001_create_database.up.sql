@@ -1,6 +1,4 @@
-CREATE DATABASE IF NOT EXISTS logs;
-
-CREATE TABLE IF NOT EXISTS logs.goods(
+CREATE TABLE IF NOT EXISTS goods(
     Id Int32,
     ProjectId Int32,
     Name String,
