@@ -12,11 +12,13 @@ type Handler struct {
 	service gService.Service
 }
 
-func NewGoodsHandler(service gService.Service) (*Handler, error) {
-	return &Handler{service}, nil
+func NewGoodsHandler(service gService.Service) *Handler {
+	return &Handler{service}
 }
 
 func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
 		http.Error(w, "Invalid limit", http.StatusBadRequest)
@@ -30,7 +32,7 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Выполнение запроса к базе данных
-	resp, err := h.service.GetList(limit, offset)
+	resp, err := h.service.GetList(ctx, limit, offset)
 	if err != nil {
 		return
 	}
@@ -49,6 +51,8 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	//ctx := r.Context()
+
 	// Получаем параметр projectId из URL
 	projectID, err := strconv.Atoi(r.URL.Query().Get("projectId"))
 	if err != nil {
