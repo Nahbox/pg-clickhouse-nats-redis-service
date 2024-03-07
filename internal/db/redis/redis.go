@@ -6,11 +6,13 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/config"
 )
 
-func New() (*redis.Client, error) {
+func New(conf *config.RConfig) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: conf.RAddr(),
 	})
 
 	// Проверяем соединение с Redis
