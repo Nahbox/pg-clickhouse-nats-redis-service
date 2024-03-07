@@ -12,8 +12,8 @@ type Repo struct {
 	storage *sql.DB
 }
 
-func NewGoodsRepo(storage *sql.DB) (model.Repository, error) {
-	return &Repo{storage}, nil
+func NewGoodsRepo(storage *sql.DB) model.Repository {
+	return &Repo{storage}
 }
 
 func (r *Repo) Add(data *model.Good) (*model.Good, error) {
