@@ -3,17 +3,19 @@ package clickhouse
 import (
 	"database/sql/driver"
 	"errors"
-	"path/filepath"
 
 	"github.com/ClickHouse/clickhouse-go"
-
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/clickhouse"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/mattes/migrate/source/file"
+
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/config"
 )
 
-func New() (driver.Conn, error) {
-	connStr := "tcp://localhost:9000?username=default&password="
+func New(conf *config.CHConfig) (driver.Conn, error) {
+	connStr := conf.ChDsn()
+	sourceUrl := conf.ChMigrationsPathStr()
 
 	// Подключение к ClickHouse
 	chConn, err := clickhouse.Open(connStr)
@@ -21,7 +23,7 @@ func New() (driver.Conn, error) {
 		return nil, err
 	}
 
-	err = Migrate(connStr)
+	err = Migrate(connStr, sourceUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -29,9 +31,7 @@ func New() (driver.Conn, error) {
 	return chConn, nil
 }
 
-func Migrate(connStr string) error {
-	sourceUrl := "file://" + filepath.Join("/", "internal", "db", "clickhouse", "migrations")
-
+func Migrate(connStr string, sourceUrl string) error {
 	m, err := migrate.New(sourceUrl, connStr)
 	if err != nil {
 		return err
