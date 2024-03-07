@@ -1,7 +1,9 @@
 package goods
 
+import "context"
+
 type Service interface {
-	GetList(limit int, offset int) (*GetResponse, error)
+	GetList(ctx context.Context, limit int, offset int) (*GetResponse, error)
 	Create(data *Good) (*Good, error)
 	Update(data *Good) (*Good, error)
 	Remove(id int, projectId int) (*DeleteResponse, error)
