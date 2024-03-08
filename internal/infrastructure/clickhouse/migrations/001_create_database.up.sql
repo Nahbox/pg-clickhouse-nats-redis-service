@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS goods(
     nats_subjects = 'logs',
     nats_format = 'JSONEachRow',
     nats_max_block_size = 100,
-    nats_flush_interval_ms = 5000;
+    nats_flush_interval_ms = 3000;
