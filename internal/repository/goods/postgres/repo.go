@@ -95,8 +95,7 @@ func (r *Repo) Update(data *model.Good) (*model.Good, error) {
 	}
 
 	err = tx.QueryRow(`
-			UPDATE goods SET name=$1, description=$2 WHERE id=$3, project_id=$4 RETURNING priority, removed, created_at;
-			`,
+			UPDATE goods SET name=$1, description=$2 WHERE id=$3, project_id=$4 RETURNING priority, removed, created_at;`,
 		data.Name, data.Description, data.Id, data.ProjectId).Scan(&data.Priority, &data.Removed, &data.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -105,79 +104,98 @@ func (r *Repo) Update(data *model.Good) (*model.Good, error) {
 	return data, tx.Commit()
 }
 
-func (r *Repo) Delete(id, projectId int) (*model.DeleteResponse, error) {
+func (r *Repo) Delete(id, projectId int) (*model.DeleteResponse, *model.Good, error) {
+	var good *model.Good
+	good.Id = id
+	good.ProjectId = projectId
+
 	tx, err := r.storage.Begin()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer tx.Rollback()
 
 	// Блокировка таблицы goods
 	_, err = tx.Exec(`LOCK TABLE goods IN EXCLUSIVE MODE`)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	_, err = tx.Exec(`UPDATE goods SET removed=$1 WHERE id=$2 AND project_id=$3`, true, id, projectId)
+	err = tx.QueryRow(`UPDATE goods SET removed=$1 WHERE id=$2 AND project_id=$3 RETURNING name, description, priority, created_at;`,
+		true, id, projectId).Scan(&good.Name, &good.Description, &good.Priority, &good.CreatedAt)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	deleteResp := &model.DeleteResponse{Id: id, CampaignId: projectId, Removed: true}
 
-	return deleteResp, tx.Commit()
+	return deleteResp, good, tx.Commit()
 }
 
-func (r *Repo) UpdatePriority(id, projectId, newPriority int) (*model.ReprioritizeResponse, error) {
+func (r *Repo) UpdatePriority(id, projectId, newPriority int) (*model.ReprioritizeResponse, []model.Good, error) {
+	var goods []model.Good
+
+	var good model.Good
+	good.Id = id
+	good.ProjectId = projectId
+	good.Priority = newPriority
+
 	tx, err := r.storage.Begin()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer tx.Rollback()
 
 	// Блокировка таблицы goods
 	_, err = tx.Exec(`LOCK TABLE goods IN EXCLUSIVE MODE`)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var priorities []model.Priorities
 
 	// Выполняем запрос на обновление приоритета
-	_, err = tx.Exec(`UPDATE goods SET priority=$1 WHERE id=$2 AND project_id=$3;`, newPriority, id, projectId)
+	err = tx.QueryRow(`UPDATE goods SET priority=$1 WHERE id=$2 AND project_id=$3 RETURNING name, description, removed, created_at;`,
+		newPriority, id, projectId).Scan(&good.Name, &good.Description, &good.Removed, &good.CreatedAt)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	priorities = append(priorities, model.Priorities{Id: id, Priority: newPriority})
+	goods = append(goods, good)
 
 	// Выполняем запрос на обновление приоритета
 	_, err = tx.Exec(`UPDATE goods SET priority=$1 WHERE id > $2;`, newPriority, id)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := r.storage.Query(`SELECT id, priority FROM goods WHERE id > $1 ORDER BY id;`, id)
+	rows, err := r.storage.Query(`SELECT * FROM goods WHERE id > $1 ORDER BY id;`, id)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
 	// Читаем строки и добавляем их в структуру
 	for rows.Next() {
 		var priority model.Priorities
-		if err := rows.Scan(&priority.Id, &priority.Priority); err != nil {
-			return nil, err
+		var good model.Good
+		err := rows.Scan(&good.Id, &good.ProjectId, &good.Name, &good.Description, &good.Priority, &good.Removed, &good.CreatedAt)
+		if err != nil {
+			return nil, nil, err
 		}
+		priority.Id = good.Id
+		priority.Priority = good.Priority
+		goods = append(goods, good)
 		priorities = append(priorities, priority)
 	}
 
 	// Проверяем наличие ошибок при чтении строк
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	data := &model.ReprioritizeResponse{Priorities: priorities}
 
-	return data, tx.Commit()
+	return data, goods, tx.Commit()
 }
