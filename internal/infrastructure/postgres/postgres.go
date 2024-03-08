@@ -28,7 +28,7 @@ func New(conf *config.PgConfig) (*sql.DB, error) {
 		return nil, err
 	}
 
-	log.Info("database connection established")
+	log.Info("postgres db connection established")
 
 	driver, err := postgres.WithInstance(conn, &postgres.Config{})
 	if err != nil {
@@ -47,7 +47,7 @@ func New(conf *config.PgConfig) (*sql.DB, error) {
 		return nil, err
 	}
 
-	log.Info("database migrated")
+	log.Info("postgres db migrated")
 
 	return conn, nil
 }
