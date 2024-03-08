@@ -9,6 +9,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/clickhouse"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattes/migrate/source/file"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/config"
 )
@@ -23,10 +24,14 @@ func New(conf *config.CHConfig) (driver.Conn, error) {
 		return nil, err
 	}
 
+	log.Info("clickhouse db connection established")
+
 	err = Migrate(connStr, sourceUrl)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Info("clickhouse db migrated")
 
 	return chConn, nil
 }
