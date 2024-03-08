@@ -16,12 +16,12 @@ func New(conf *config.RConfig) (*redis.Client, error) {
 	})
 
 	// Проверяем соединение с Redis
-	pong, err := client.Ping(context.Background()).Result()
+	_, err := client.Ping(context.Background()).Result()
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Подключение к Redis установлено:", pong)
+	log.Info("redis db connection established")
 
 	return client, nil
 }
