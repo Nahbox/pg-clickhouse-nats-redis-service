@@ -14,20 +14,25 @@ import (
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 
+	msgbRepository "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/repository/msgbroker/nats-streaming"
+
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/config"
-	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/db/clickhouse"
-	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/db/postgres"
-	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/db/redis"
 	goodsHandler "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/handlers/goods"
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/infrastructure/clickhouse"
+	nats "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/infrastructure/nats-streaming"
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/infrastructure/postgres"
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/infrastructure/redis"
 	goodsRepository "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/repository/goods/postgres"
 	kvstoreRepository "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/repository/kvstore/redis"
 	goodsService "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/service/goods"
 )
 
 func main() {
-	if os.Getenv("APP_ENV") == "local" {
-		godotenv.Load()
-	}
+	//if os.Getenv("APP_ENV") == "local" {
+	//	godotenv.Load()
+	//}
+
+	godotenv.Load()
 
 	cfg, err := config.FromEnv()
 	if err != nil {
@@ -37,14 +42,14 @@ func main() {
 	// Подключение к postgres
 	pgdb, err := postgres.New(cfg.PgConfig)
 	if err != nil {
-		log.Fatal("init postgres db", err)
+		log.Fatal("init postgres infrastructure", err)
 	}
 	defer pgdb.Close()
 
 	// Подключение к redis
 	rdb, err := redis.New(cfg.RConfig)
 	if err != nil {
-		log.Fatal("init redis db", err)
+		log.Fatal("init redis infrastructure", err)
 	}
 	defer rdb.Close()
 
@@ -55,9 +60,18 @@ func main() {
 	}
 	defer chdb.Close()
 
+	sc, err := nats.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer sc.Close()
+
 	gRepo := goodsRepository.NewGoodsRepo(pgdb)
 	rRepo := kvstoreRepository.NewKVStoreRepo(rdb)
-	gService := goodsService.NewService(gRepo, rRepo)
+	msgbRepo := msgbRepository.NewMsgbRepo(sc)
+
+	gService := goodsService.NewService(gRepo, rRepo, msgbRepo)
+
 	gHandler := goodsHandler.NewGoodsHandler(gService)
 
 	router := chi.NewRouter()
