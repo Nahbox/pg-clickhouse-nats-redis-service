@@ -7,15 +7,17 @@ import (
 
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/domain/goods"
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/domain/kvstore"
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/domain/msgbroker"
 )
 
 type Service struct {
 	goodsRepo   goods.Repository
 	kvstoreRepo kvstore.Repository
+	msgbRepo    msgbroker.Repository
 }
 
-func NewService(goodsRepo goods.Repository, kvstoreRepo kvstore.Repository) *Service {
-	return &Service{goodsRepo, kvstoreRepo}
+func NewService(goodsRepo goods.Repository, kvstoreRepo kvstore.Repository, msgbRepo msgbroker.Repository) *Service {
+	return &Service{goodsRepo, kvstoreRepo, msgbRepo}
 }
 
 func (s *Service) GetList(ctx context.Context, limit int, offset int) (*goods.GetResponse, error) {
@@ -46,17 +48,75 @@ func (s *Service) GetList(ctx context.Context, limit int, offset int) (*goods.Ge
 }
 
 func (s *Service) Create(data *goods.Good) (*goods.Good, error) {
-	return s.goodsRepo.Add(data)
+	resp, err := s.goodsRepo.Add(data)
+	if err != nil {
+		return nil, err
+	}
+
+	logData := goodToLog(data)
+	err = s.msgbRepo.Publish(logData)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (s *Service) Update(data *goods.Good) (*goods.Good, error) {
-	return s.goodsRepo.Update(data)
+	resp, err := s.goodsRepo.Update(data)
+	if err != nil {
+		return nil, err
+	}
+
+	logData := goodToLog(data)
+	err = s.msgbRepo.Publish(logData)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (s *Service) Remove(id int, projectId int) (*goods.DeleteResponse, error) {
-	return s.goodsRepo.Delete(id, projectId)
+	resp, good, err := s.goodsRepo.Delete(id, projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	logData := goodToLog(good)
+	err = s.msgbRepo.Publish(logData)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (s *Service) Reprioritize(id int, projectId, newPriority int) (*goods.ReprioritizeResponse, error) {
-	return s.goodsRepo.UpdatePriority(id, projectId, newPriority)
+	resp, goodsData, err := s.goodsRepo.UpdatePriority(id, projectId, newPriority)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, good := range goodsData {
+		logData := goodToLog(&good)
+		err = s.msgbRepo.Publish(logData)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return resp, nil
+}
+
+func goodToLog(goodData *goods.Good) *msgbroker.Log {
+	return &msgbroker.Log{
+		Id:          goodData.Id,
+		ProjectId:   goodData.ProjectId,
+		Name:        goodData.Name,
+		Description: goodData.Description,
+		Priority:    goodData.Priority,
+		Removed:     goodData.Removed,
+		EventTime:   goodData.CreatedAt,
+	}
 }
