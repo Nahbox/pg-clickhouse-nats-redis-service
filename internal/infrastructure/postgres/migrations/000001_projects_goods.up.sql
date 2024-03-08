@@ -6,6 +6,10 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 
 INSERT INTO projects (name) VALUES ('First record');
+INSERT INTO projects (name) VALUES ('Second record');
+INSERT INTO projects (name) VALUES ('Third record');
+INSERT INTO projects (name) VALUES ('Fourth record');
+INSERT INTO projects (name) VALUES ('Fifth record');
 
 -- Создание таблицы "goods"
 CREATE TABLE IF NOT EXISTS goods (
