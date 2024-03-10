@@ -1,25 +1,26 @@
 nats-serv:
 	docker compose up nats-streaming -d
-	sleep 5
+	sleep 4
 
 postgres:
 	docker compose up postgres -d
-	sleep 5
+	sleep 4
 
 rd:
 	docker compose up redis -d
-	sleep 5
+	sleep 4
 
 ch:
 	docker compose up clickhouse -d
-	sleep 5
+	sleep 4
+
+consumer:
+	go run cmd/consumer/main.go &
 
 service:
-	go run cmd/service/main.go
+	go run cmd/service/main.go &
 
-infrastructure: postgres rd nats-serv ch
-
-all: postgres rd nats-serv ch service
+all: postgres rd nats-serv ch service consumer
 
 clean:
 	docker compose down

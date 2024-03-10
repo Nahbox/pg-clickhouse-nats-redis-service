@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -24,14 +23,12 @@ func (r *Repo) Set(ctx context.Context, key string, value interface{}) error {
 	// Сериализация значения в байтовый вид
 	encodedValue, err := json.Marshal(value)
 	if err != nil {
-		fmt.Println("Ошибка при сериализации значения:", err)
 		return err
 	}
 
 	// Запись данных в Redis с истекающим сроком годности (время жизни одна минута)
 	err = r.storage.Set(ctx, key, encodedValue, time.Minute).Err()
 	if err != nil {
-		fmt.Println("Ошибка при установке значения в Redis:", err)
 		return err
 	}
 	return nil

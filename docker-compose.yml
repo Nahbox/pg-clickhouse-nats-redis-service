@@ -25,13 +25,9 @@ services:
     ports:
       - "8123:8123"  # порт HTTP интерфейса
       - "9000:9000"  # порт TCP интерфейса
-#    volumes:
-#      - ./clickhouse/data:/var/lib/clickhouse  # монтирование директории данных
 
   redis:
     image: redis:7.2
     container_name: redis
     ports:
       - "6379:6379" # проброс порта для доступа к Redis
-#    volumes:
-#      - ./redis/data:/data # монтирование директории данных Redis

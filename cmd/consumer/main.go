@@ -30,13 +30,13 @@ func main() {
 
 	chConn, err := clickhouse.New(cfg.CHConfig)
 	if err != nil {
-		log.WithError(err).Fatal(err)
+		log.WithError(err).Fatal("init clickhouse")
 	}
 	defer chConn.Close()
 
 	natsConn, err := nats.New("subscriber-client", "")
 	if err != nil {
-		log.WithError(err).Fatal("")
+		log.WithError(err).Fatal("init nats subscriber")
 	}
 	defer natsConn.Close()
 
@@ -53,7 +53,7 @@ func main() {
 
 		err := service.SaveLogs(ctx)
 		if err != nil {
-			log.WithError(err).Fatal("")
+			log.WithError(err).Fatal("save logs")
 		}
 	}()
 

@@ -88,8 +88,8 @@ func (r *Repo) Update(data *model.Good) (*model.Good, error) {
 	}
 	defer tx.Rollback()
 
-	// Блокировка таблицы goods
-	_, err = tx.Exec(`LOCK TABLE goods IN EXCLUSIVE MODE`)
+	// Блокировка
+	_, err = tx.Exec(`SELECT * WHERE id=$1 AND project_id=$2 FOR UPDATE`, data.Id, data.ProjectId)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +115,8 @@ func (r *Repo) Delete(id, projectId int) (*model.DeleteResponse, *model.Good, er
 	}
 	defer tx.Rollback()
 
-	// Блокировка таблицы goods
-	_, err = tx.Exec(`LOCK TABLE goods IN EXCLUSIVE MODE`)
+	// Блокировка
+	_, err = tx.Exec(`SELECT * WHERE id=$1 AND project_id=$2 FOR UPDATE`, id, projectId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -146,8 +146,8 @@ func (r *Repo) UpdatePriority(id, projectId, newPriority int) (*model.Reprioriti
 	}
 	defer tx.Rollback()
 
-	// Блокировка таблицы goods
-	_, err = tx.Exec(`LOCK TABLE goods IN EXCLUSIVE MODE`)
+	// Блокировка
+	_, err = tx.Exec(`SELECT * WHERE id=$1 AND project_id=$2 FOR UPDATE`, id, projectId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -164,13 +164,19 @@ func (r *Repo) UpdatePriority(id, projectId, newPriority int) (*model.Reprioriti
 	priorities = append(priorities, model.Priorities{Id: id, Priority: newPriority})
 	goods = append(goods, good)
 
+	// Блокировка
+	_, err = tx.Exec(`SELECT * WHERE id > $1 FOR UPDATE`, id)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Выполняем запрос на обновление приоритета
 	_, err = tx.Exec(`UPDATE goods SET priority=$1 WHERE id > $2;`, newPriority, id)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, err := r.storage.Query(`SELECT * FROM goods WHERE id > $1 ORDER BY id;`, id)
+	rows, err := tx.Query(`SELECT * FROM goods WHERE id > $1 ORDER BY id;`, id)
 	if err != nil {
 		return nil, nil, err
 	}

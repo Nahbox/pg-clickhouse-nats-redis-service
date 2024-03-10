@@ -23,6 +23,5 @@ CREATE TABLE IF NOT EXISTS goods (
 );
 
 -- Создание индексов
-CREATE INDEX IF NOT EXISTS idx_goods_id ON goods (id);
-CREATE INDEX IF NOT EXISTS idx_goods_project_id ON goods (project_id);
+CREATE INDEX IF NOT EXISTS idx_goods_id_project_id ON goods (id, project_id);
 CREATE INDEX IF NOT EXISTS idx_goods_name ON goods (name);

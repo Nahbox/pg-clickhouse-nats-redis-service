@@ -33,8 +33,6 @@ func batchLogs(ctx context.Context, logsCh <-chan *logs.Log, maxItems int, maxTi
 	go func() {
 		defer func() {
 			close(batches)
-			fmt.Println("goroutine finished")
-
 		}()
 
 		for keepGoing := true; keepGoing; {
@@ -50,21 +48,16 @@ func batchLogs(ctx context.Context, logsCh <-chan *logs.Log, maxItems int, maxTi
 				}
 				select {
 				case <-ctx.Done():
-					fmt.Println("ctx.Done()")
 					keepGoing = false
 					sendBatch(batch)
 					return
 
 				case value, ok := <-logsCh:
 					if !ok {
-						fmt.Println("closed channel")
-
 						keepGoing = false
 						sendBatch(batch)
 						return
 					}
-
-					fmt.Println("id = ", value.Id)
 
 					batch = append(batch, *value)
 					if len(batch) == maxItems {
@@ -101,8 +94,6 @@ func (s *Service) SaveLogs(ctx context.Context) error {
 			return err
 		}
 	}
-
-	fmt.Println("SaveLogs finished")
 
 	return nil
 }

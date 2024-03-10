@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	log "github.com/sirupsen/logrus"
+
 	gService "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/domain/goods"
 )
 
@@ -21,12 +23,14 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
-		http.Error(w, "Invalid limit", http.StatusBadRequest)
+		log.WithError(err).Error("invalid limit parameter")
+		http.Error(w, "Invalid limit parameter", http.StatusBadRequest)
 		return
 	}
 
 	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
 	if err != nil {
+		log.WithError(err).Error("invalid offset parameter")
 		http.Error(w, "Invalid offset", http.StatusBadRequest)
 		return
 	}
@@ -34,6 +38,7 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 	// Выполнение запроса к базе данных
 	resp, err := h.service.GetList(ctx, limit, offset)
 	if err != nil {
+		log.WithError(err).Error("get records list")
 		return
 	}
 
@@ -42,6 +47,7 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 
 	// Кодируем resp в JSON и отправляем его в тело ответа
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.WithError(err).Error("encode response data")
 		http.Error(w, "Failed to encode response data", http.StatusInternalServerError)
 		return
 	}
@@ -51,11 +57,10 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	//ctx := r.Context()
-
 	// Получаем параметр projectId из URL
 	projectID, err := strconv.Atoi(r.URL.Query().Get("projectId"))
 	if err != nil {
+		log.WithError(err).Error("invalid projectId parameter")
 		http.Error(w, "Invalid projectId parameter", http.StatusBadRequest)
 		return
 	}
@@ -63,6 +68,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	// Декодируем JSON из тела запроса
 	var postData gService.PostData
 	if err := json.NewDecoder(r.Body).Decode(&postData); err != nil {
+		log.WithError(err).Error("decode request body")
 		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
 		return
 	}
@@ -73,7 +79,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	// Например, вызываем метод сервиса для создания данных в базе данных
 	resp, err := h.service.Create(data)
 	if err != nil {
-		http.Error(w, "Failed to create object", http.StatusInternalServerError)
+		log.WithError(err).Error("create record")
+		http.Error(w, "Failed to create record", http.StatusInternalServerError)
 		return
 	}
 
@@ -83,6 +90,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	// Кодируем resp в JSON и отправляем его в тело ответа
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		// Обработка ошибки при кодировании resp в JSON
+		log.WithError(err).Error("encode response data")
 		http.Error(w, "Failed to encode response data", http.StatusInternalServerError)
 		return
 	}
@@ -95,25 +103,29 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	// Получаем параметры из URL
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
+		log.WithError(err).Error("invalid id parameter")
 		http.Error(w, "Invalid id parameter", http.StatusBadRequest)
 		return
 	}
 
 	projectID, err := strconv.Atoi(r.URL.Query().Get("projectId"))
 	if err != nil {
-		http.Error(w, "Invalid project_id parameter", http.StatusBadRequest)
+		log.WithError(err).Error("invalid projectId parameter")
+		http.Error(w, "Invalid projectId parameter", http.StatusBadRequest)
 		return
 	}
 
 	// Декодируем JSON из тела запроса
 	var patchData gService.PatchData
 	if err := json.NewDecoder(r.Body).Decode(&patchData); err != nil {
+		log.WithError(err).Error("decode request body")
 		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
 		return
 	}
 
 	// Проверяем наличие обязательного поля "name"
 	if patchData.Name == "" {
+		log.WithError(err).Error("name field is required")
 		http.Error(w, "Name field is required", http.StatusBadRequest)
 		return
 	}
@@ -123,6 +135,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	// Выполняем обновление записи в базе данных
 	resp, err := h.service.Update(data)
 	if err != nil {
+		log.WithError(err).Error("update record")
 		return
 	}
 
@@ -132,6 +145,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	// Кодируем resp в JSON и отправляем его в тело ответа
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		// Обработка ошибки при кодировании resp в JSON
+		log.WithError(err).Error("encode response data")
 		http.Error(w, "Failed to encode response data", http.StatusInternalServerError)
 		return
 	}
@@ -144,13 +158,15 @@ func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
 	// Получаем параметры из URL
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
+		log.WithError(err).Error("invalid id parameter")
 		http.Error(w, "Invalid id parameter", http.StatusBadRequest)
 		return
 	}
 
 	projectID, err := strconv.Atoi(r.URL.Query().Get("projectId"))
 	if err != nil {
-		http.Error(w, "Invalid project_id parameter", http.StatusBadRequest)
+		log.WithError(err).Error("invalid projectId parameter")
+		http.Error(w, "Invalid projectId parameter", http.StatusBadRequest)
 		return
 	}
 
@@ -158,6 +174,7 @@ func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.service.Remove(id, projectID)
 	if err != nil {
 		// Обработка ошибки, если удаление не удалось
+		log.WithError(err).Error("delete record")
 		http.Error(w, "Failed to delete record", http.StatusInternalServerError)
 		return
 	}
@@ -168,6 +185,7 @@ func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
 	// Кодируем resp в JSON и отправляем его в тело ответа
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		// Обработка ошибки при кодировании resp в JSON
+		log.WithError(err).Error("encode response data")
 		http.Error(w, "Failed to encode response data", http.StatusInternalServerError)
 		return
 	}
@@ -180,13 +198,15 @@ func (h *Handler) Reprioritize(w http.ResponseWriter, r *http.Request) {
 	// Получаем параметры из URL
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
+		log.WithError(err).Error("invalid id parameter")
 		http.Error(w, "Invalid id parameter", http.StatusBadRequest)
 		return
 	}
 
 	projectID, err := strconv.Atoi(r.URL.Query().Get("projectId"))
 	if err != nil {
-		http.Error(w, "Invalid project_id parameter", http.StatusBadRequest)
+		log.WithError(err).Error("invalid projectId parameter")
+		http.Error(w, "Invalid projectId parameter", http.StatusBadRequest)
 		return
 	}
 
@@ -196,12 +216,14 @@ func (h *Handler) Reprioritize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&patchData); err != nil {
+		log.WithError(err).Error("decode request body")
 		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
 		return
 	}
 
 	// Проверяем корректность нового приоритета
 	if patchData.NewPriority <= 1 {
+		log.WithError(err).Error("invalid record new priority")
 		http.Error(w, "The new priority must be greater than or equal to one.", http.StatusBadRequest)
 		return
 	}
@@ -210,6 +232,7 @@ func (h *Handler) Reprioritize(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.service.Reprioritize(id, projectID, patchData.NewPriority)
 	if err != nil {
 		// Обработка ошибки, если обновление приоритета не удалось
+		log.WithError(err).Error("update priority")
 		http.Error(w, "Failed to update priority", http.StatusInternalServerError)
 		return
 	}
@@ -220,6 +243,7 @@ func (h *Handler) Reprioritize(w http.ResponseWriter, r *http.Request) {
 	// Кодируем resp в JSON и отправляем его в тело ответа
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		// Обработка ошибки при кодировании resp в JSON
+		log.WithError(err).Error("encode response data")
 		http.Error(w, "Failed to encode response data", http.StatusInternalServerError)
 		return
 	}

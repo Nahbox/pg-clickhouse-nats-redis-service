@@ -31,26 +31,26 @@ func main() {
 
 	cfg, err := config.FromEnv()
 	if err != nil {
-		log.Fatal("read config from env", err)
+		log.WithError(err).Fatal("read config from env")
 	}
 
 	// Подключение к postgres
 	pgdb, err := postgres.New(cfg.PgConfig)
 	if err != nil {
-		log.Fatal("init postgres infrastructure", err)
+		log.WithError(err).Fatal("init postgres")
 	}
 	defer pgdb.Close()
 
 	// Подключение к redis
 	rdb, err := redis.New(cfg.RConfig)
 	if err != nil {
-		log.Fatal("init redis infrastructure", err)
+		log.WithError(err).Fatal("init redis")
 	}
 	defer rdb.Close()
 
 	sc, err := nats.New("publisher-client", cfg.NatsConfig.URL())
 	if err != nil {
-		log.Fatal(err)
+		log.WithError(err).Fatal("init nats publisher")
 	}
 	defer sc.Close()
 

@@ -3,7 +3,6 @@ package nats_streaming
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/nats-io/stan.go"
 
@@ -28,11 +27,9 @@ func (r *Repo) Publish(data *logs.Log) error {
 	}
 
 	if err := r.sc.Publish(subject, msg); err != nil {
-		//log.Fatalf("error publishing: %v", err)
 		return err
 	}
 
-	//log.Printf("published from: %s", v.Name())
 	return nil
 }
 
@@ -45,7 +42,6 @@ func (r *Repo) ReadAsync(ctx context.Context, subjectID string, out chan<- *logs
 			return
 		}
 		out <- &msg
-		fmt.Println("aaaaa")
 	}, stan.DeliverAllAvailable())
 
 	if err != nil {
