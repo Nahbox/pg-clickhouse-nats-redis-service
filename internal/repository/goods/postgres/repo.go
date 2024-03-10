@@ -27,7 +27,7 @@ func (r *Repo) Add(data *model.Good) (*model.Good, error) {
 
 	err = tx.QueryRow(`
 			INSERT INTO goods (project_id, name,  description, removed) 
-			VALUES ($1, $2, $3, $4, $5) RETURNING id, priority, created_at;
+			VALUES ($1, $2, $3, $4) RETURNING id, priority, created_at;
 			`,
 		data.ProjectId, data.Name, data.Description, data.Removed).Scan(&data.Id, &data.Priority, &data.CreatedAt)
 	if err != nil {
@@ -95,7 +95,7 @@ func (r *Repo) Update(data *model.Good) (*model.Good, error) {
 	}
 
 	err = tx.QueryRow(`
-			UPDATE goods SET name=$1, description=$2 WHERE id=$3, project_id=$4 RETURNING priority, removed, created_at;`,
+			UPDATE goods SET name=$1, description=$2 WHERE id=$3 AND project_id=$4 RETURNING priority, removed, created_at;`,
 		data.Name, data.Description, data.Id, data.ProjectId).Scan(&data.Priority, &data.Removed, &data.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (r *Repo) Update(data *model.Good) (*model.Good, error) {
 }
 
 func (r *Repo) Delete(id, projectId int) (*model.DeleteResponse, *model.Good, error) {
-	var good *model.Good
+	var good model.Good
 	good.Id = id
 	good.ProjectId = projectId
 
@@ -121,15 +121,15 @@ func (r *Repo) Delete(id, projectId int) (*model.DeleteResponse, *model.Good, er
 		return nil, nil, err
 	}
 
-	err = tx.QueryRow(`UPDATE goods SET removed=$1 WHERE id=$2 AND project_id=$3 RETURNING name, description, priority, created_at;`,
-		true, id, projectId).Scan(&good.Name, &good.Description, &good.Priority, &good.CreatedAt)
+	err = tx.QueryRow(`UPDATE goods SET removed=$1 WHERE id=$2 AND project_id=$3 RETURNING name, description, priority, removed, created_at;`,
+		true, id, projectId).Scan(&good.Name, &good.Description, &good.Priority, &good.Removed, &good.CreatedAt)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	deleteResp := &model.DeleteResponse{Id: id, CampaignId: projectId, Removed: true}
 
-	return deleteResp, good, tx.Commit()
+	return deleteResp, &good, tx.Commit()
 }
 
 func (r *Repo) UpdatePriority(id, projectId, newPriority int) (*model.ReprioritizeResponse, []model.Good, error) {

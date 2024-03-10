@@ -16,7 +16,7 @@ import (
 )
 
 func New(conf *config.PgConfig) (*sql.DB, error) {
-	dsn := conf.PgDsn()
+	dsn := conf.Dsn()
 
 	conn, err := sql.Open("postgres", dsn)
 	if err != nil {

@@ -10,12 +10,7 @@ type CHConfig struct {
 	CHMigrationsPath string `envconfig:"CLICKHOUSE_MIGRATIONS_PATH" required:"true"`
 }
 
-func (ch *CHConfig) ChDsn() string {
-	return fmt.Sprintf("clickhouse://%s:%d?username=%s&password=%s",
-		ch.ChHost, ch.ChPort, ch.ChUser, ch.ChPassword)
-}
-
-func (ch *CHConfig) ChMigrationsPathStr() string {
-	return fmt.Sprintf("file://%s",
-		ch.CHMigrationsPath)
+func (ch *CHConfig) Dsn() string {
+	return fmt.Sprintf("clickhouse://%s:%d?sslmode=disable",
+		ch.ChHost, ch.ChPort)
 }

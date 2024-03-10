@@ -15,7 +15,9 @@ ch:
 	sleep 5
 
 service:
-	go run cmd/main.go
+	go run cmd/service/main.go
+
+infrastructure: postgres rd nats-serv ch
 
 all: postgres rd nats-serv ch service
 

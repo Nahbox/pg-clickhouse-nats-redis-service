@@ -18,7 +18,6 @@ import (
 
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/config"
 	goodsHandler "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/handlers/goods"
-	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/infrastructure/clickhouse"
 	nats "github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/infrastructure/nats-streaming"
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/infrastructure/postgres"
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/infrastructure/redis"
@@ -28,10 +27,6 @@ import (
 )
 
 func main() {
-	//if os.Getenv("APP_ENV") == "local" {
-	//	godotenv.Load()
-	//}
-
 	godotenv.Load()
 
 	cfg, err := config.FromEnv()
@@ -53,14 +48,7 @@ func main() {
 	}
 	defer rdb.Close()
 
-	// Подключение к clickhouse
-	chdb, err := clickhouse.New(cfg.CHConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer chdb.Close()
-
-	sc, err := nats.New()
+	sc, err := nats.New("publisher-client", cfg.NatsConfig.URL())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -68,7 +56,7 @@ func main() {
 
 	gRepo := goodsRepository.NewGoodsRepo(pgdb)
 	rRepo := kvstoreRepository.NewKVStoreRepo(rdb)
-	msgbRepo := msgbRepository.NewMsgbRepo(sc)
+	msgbRepo := msgbRepository.NewRepo(sc)
 
 	gService := goodsService.NewService(gRepo, rRepo, msgbRepo)
 

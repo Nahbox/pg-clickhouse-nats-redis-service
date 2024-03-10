@@ -10,9 +10,9 @@ import (
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/config"
 )
 
-func New(conf *config.RConfig) (*redis.Client, error) {
+func New(conf *config.RedisConfig) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr: conf.RAddr(),
+		Addr: conf.Addr(),
 	})
 
 	// Проверяем соединение с Redis

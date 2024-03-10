@@ -11,7 +11,7 @@ type PgConfig struct {
 	PgMigrationsPath string `envconfig:"POSTGRES_MIGRATIONS_PATH" required:"true"`
 }
 
-func (p *PgConfig) PgDsn() string {
+func (p *PgConfig) Dsn() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		p.PgHost, p.PgPort, p.PgUser, p.PgPassword, p.PgDB)
 }

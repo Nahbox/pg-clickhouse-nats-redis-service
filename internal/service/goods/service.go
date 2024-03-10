@@ -7,6 +7,7 @@ import (
 
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/domain/goods"
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/domain/kvstore"
+	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/domain/logs"
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/domain/msgbroker"
 )
 
@@ -35,7 +36,7 @@ func (s *Service) GetList(ctx context.Context, limit int, offset int) (*goods.Ge
 	// Иначе возвращаем результат из postgres
 	res, err = s.goodsRepo.Get(limit, offset)
 	if res != nil && err != nil {
-		key := fmt.Sprintf("o=%s,l=%s", strconv.Itoa(res.Meta.Offset), strconv.Itoa(res.Meta.Limit))
+		key := fmt.Sprintf("l=%s,o=%s", strconv.Itoa(res.Meta.Limit), strconv.Itoa(res.Meta.Offset))
 
 		// Помещаем результат в redis
 		err = s.kvstoreRepo.Set(ctx, key, res)
@@ -109,8 +110,8 @@ func (s *Service) Reprioritize(id int, projectId, newPriority int) (*goods.Repri
 	return resp, nil
 }
 
-func goodToLog(goodData *goods.Good) *msgbroker.Log {
-	return &msgbroker.Log{
+func goodToLog(goodData *goods.Good) *logs.Log {
+	return &logs.Log{
 		Id:          goodData.Id,
 		ProjectId:   goodData.ProjectId,
 		Name:        goodData.Name,

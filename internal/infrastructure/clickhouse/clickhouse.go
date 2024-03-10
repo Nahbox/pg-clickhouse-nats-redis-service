@@ -1,48 +1,60 @@
 package clickhouse
 
 import (
-	"database/sql/driver"
-	"errors"
+	"context"
+	_ "database/sql/driver"
+	"os"
 
-	"github.com/ClickHouse/clickhouse-go"
-	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/clickhouse"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattes/migrate/source/file"
 	log "github.com/sirupsen/logrus"
+	"github.com/uptrace/go-clickhouse/ch"
+	"github.com/uptrace/go-clickhouse/chmigrate"
 
 	"github.com/Nahbox/pg-clickhouse-nats-redis-service/internal/config"
 )
 
-func New(conf *config.CHConfig) (driver.Conn, error) {
-	connStr := conf.ChDsn()
-	sourceUrl := conf.ChMigrationsPathStr()
+var Migrations = chmigrate.NewMigrations()
 
-	// Подключение к ClickHouse
-	chConn, err := clickhouse.Open(connStr)
-	if err != nil {
-		return nil, err
-	}
+func New(conf *config.CHConfig) (*ch.DB, error) {
+	ctx := context.Background()
+	dsn := conf.Dsn()
+
+	db := ch.Connect(
+		ch.WithDSN(dsn),
+		ch.WithUser(conf.ChUser),
+		ch.WithPassword(conf.ChPassword),
+	)
 
 	log.Info("clickhouse db connection established")
 
-	err = Migrate(connStr, sourceUrl)
+	err := Migrate(ctx, db, conf.CHMigrationsPath)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Info("clickhouse db migrated")
 
-	return chConn, nil
+	return db, nil
 }
 
-func Migrate(connStr string, sourceUrl string) error {
-	m, err := migrate.New(sourceUrl, connStr)
+func Migrate(ctx context.Context, db *ch.DB, migrationsPath string) error {
+	fsys := os.DirFS(migrationsPath)
+
+	if err := Migrations.Discover(fsys); err != nil {
+		return err
+	}
+
+	migrator := chmigrate.NewMigrator(db, Migrations)
+
+	err := migrator.Init(ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+	_, err = migrator.Migrate(ctx)
+	if err != nil {
 		return err
 	}
 

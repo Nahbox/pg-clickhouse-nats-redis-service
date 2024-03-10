@@ -5,8 +5,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func New() (stan.Conn, error) {
-	sc, err := stan.Connect("test-cluster", "publisher-client", stan.NatsURL("nats://localhost:4222"))
+const (
+	clusterID = "test-cluster"
+)
+
+func New(clientID string, natsURL string) (stan.Conn, error) {
+	sc, err := stan.Connect(
+		clusterID,
+		clientID,
+		stan.NatsURL(natsURL),
+	)
 	if err != nil {
 		return nil, err
 	}

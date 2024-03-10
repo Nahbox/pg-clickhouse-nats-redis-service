@@ -99,7 +99,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectID, err := strconv.Atoi(r.URL.Query().Get("project_id"))
+	projectID, err := strconv.Atoi(r.URL.Query().Get("projectId"))
 	if err != nil {
 		http.Error(w, "Invalid project_id parameter", http.StatusBadRequest)
 		return
@@ -148,7 +148,7 @@ func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectID, err := strconv.Atoi(r.URL.Query().Get("project_id"))
+	projectID, err := strconv.Atoi(r.URL.Query().Get("projectId"))
 	if err != nil {
 		http.Error(w, "Invalid project_id parameter", http.StatusBadRequest)
 		return
@@ -184,7 +184,7 @@ func (h *Handler) Reprioritize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectID, err := strconv.Atoi(r.URL.Query().Get("project_id"))
+	projectID, err := strconv.Atoi(r.URL.Query().Get("projectId"))
 	if err != nil {
 		http.Error(w, "Invalid project_id parameter", http.StatusBadRequest)
 		return
