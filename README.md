@@ -1,6 +1,6 @@
 # pg-clickhouse-nats-redis-service
 
-Проект представляет собой HTTP сервис, который взаимодействует с базами данных PostgreSQL, Redis, Clickhouse, реализуя CRUD API.
+Проект представляет собой HTTP сервис, который взаимодействует с базами данных PostgreSQL, Redis, Clickhouse и брокером сообщений Nats, реализуя CRUD API.
 
 ## Конфигурация
 
