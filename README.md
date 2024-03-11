@@ -58,3 +58,7 @@ curl -X PATCH -H "Content-Type: application/json" -d '{"newPriority": 5}' 'http:
 ```bash
 curl -X DELETE 'http://localhost:8080/good/remove?id=1&projectId=1'
 ```
+
+## P.S.
+1. Так как в тз указано, что данные нужно кэшировать в redis при вызове GetList, то ключ для кэширования составляется из параметров limit и offset, а значением является список объектов goods.
+2. При редактрировании какого-либо объекта, происходит инвалидация всего кэша redis, так как по отдельности это сделать слишком трудозатратно.

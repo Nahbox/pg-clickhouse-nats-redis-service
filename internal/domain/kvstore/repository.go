@@ -9,4 +9,5 @@ import (
 type Repository interface {
 	Set(ctx context.Context, key string, value interface{}) error
 	GetList(ctx context.Context, key string) (*goods.GetResponse, error)
+	EraseAll(ctx context.Context) error
 }

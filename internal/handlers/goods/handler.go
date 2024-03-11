@@ -100,6 +100,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// Получаем параметры из URL
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
@@ -133,7 +135,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	data := &gService.Good{Name: patchData.Name, Description: patchData.Description, Id: id, ProjectId: projectID}
 
 	// Выполняем обновление записи в базе данных
-	resp, err := h.service.Update(data)
+	resp, err := h.service.Update(ctx, data)
 	if err != nil {
 		log.WithError(err).Error("update record")
 		return
@@ -155,6 +157,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	// Получаем параметры из URL
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
@@ -171,7 +174,7 @@ func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Вызываем метод Delete сервиса, передавая id и projectID
-	resp, err := h.service.Remove(id, projectID)
+	resp, err := h.service.Remove(ctx, id, projectID)
 	if err != nil {
 		// Обработка ошибки, если удаление не удалось
 		log.WithError(err).Error("delete record")
@@ -195,6 +198,7 @@ func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Reprioritize(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	// Получаем параметры из URL
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
@@ -229,7 +233,7 @@ func (h *Handler) Reprioritize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Вызываем метод UpdatePriority сервиса, передавая данные для обновления приоритета
-	resp, err := h.service.Reprioritize(id, projectID, patchData.NewPriority)
+	resp, err := h.service.Reprioritize(ctx, id, projectID, patchData.NewPriority)
 	if err != nil {
 		// Обработка ошибки, если обновление приоритета не удалось
 		log.WithError(err).Error("update priority")

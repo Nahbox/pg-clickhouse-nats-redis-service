@@ -34,7 +34,7 @@ func main() {
 	}
 	defer chConn.Close()
 
-	natsConn, err := nats.New("subscriber-client", "")
+	natsConn, err := nats.New("subscriber-client", cfg.NatsConfig.URL())
 	if err != nil {
 		log.WithError(err).Fatal("init nats subscriber")
 	}

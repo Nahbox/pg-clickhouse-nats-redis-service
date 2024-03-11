@@ -35,14 +35,15 @@ func (s *Service) GetList(ctx context.Context, limit int, offset int) (*goods.Ge
 
 	// Иначе возвращаем результат из postgres
 	res, err = s.goodsRepo.Get(limit, offset)
-	if res != nil && err != nil {
-		key := fmt.Sprintf("l=%s,o=%s", strconv.Itoa(res.Meta.Limit), strconv.Itoa(res.Meta.Offset))
+	if err != nil {
+		return nil, err
+	}
 
-		// Помещаем результат в redis
-		err = s.kvstoreRepo.Set(ctx, key, res)
-		if err != nil {
-			return res, err
-		}
+	key = fmt.Sprintf("l=%s,o=%s", strconv.Itoa(res.Meta.Limit), strconv.Itoa(res.Meta.Offset))
+	// Помещаем результат в redis
+	err = s.kvstoreRepo.Set(ctx, key, res)
+	if err != nil {
+		return res, err
 	}
 
 	return res, nil
@@ -63,8 +64,13 @@ func (s *Service) Create(data *goods.Good) (*goods.Good, error) {
 	return resp, nil
 }
 
-func (s *Service) Update(data *goods.Good) (*goods.Good, error) {
+func (s *Service) Update(ctx context.Context, data *goods.Good) (*goods.Good, error) {
 	resp, err := s.goodsRepo.Update(data)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.kvstoreRepo.EraseAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +84,13 @@ func (s *Service) Update(data *goods.Good) (*goods.Good, error) {
 	return resp, nil
 }
 
-func (s *Service) Remove(id int, projectId int) (*goods.DeleteResponse, error) {
+func (s *Service) Remove(ctx context.Context, id int, projectId int) (*goods.DeleteResponse, error) {
 	resp, good, err := s.goodsRepo.Delete(id, projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.kvstoreRepo.EraseAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +104,13 @@ func (s *Service) Remove(id int, projectId int) (*goods.DeleteResponse, error) {
 	return resp, nil
 }
 
-func (s *Service) Reprioritize(id int, projectId, newPriority int) (*goods.ReprioritizeResponse, error) {
+func (s *Service) Reprioritize(ctx context.Context, id int, projectId, newPriority int) (*goods.ReprioritizeResponse, error) {
 	resp, goodsData, err := s.goodsRepo.UpdatePriority(id, projectId, newPriority)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.kvstoreRepo.EraseAll(ctx)
 	if err != nil {
 		return nil, err
 	}

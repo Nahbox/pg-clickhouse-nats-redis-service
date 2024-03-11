@@ -89,7 +89,7 @@ func (r *Repo) Update(data *model.Good) (*model.Good, error) {
 	defer tx.Rollback()
 
 	// Блокировка
-	_, err = tx.Exec(`SELECT * WHERE id=$1 AND project_id=$2 FOR UPDATE`, data.Id, data.ProjectId)
+	_, err = tx.Exec(`SELECT * FROM goods WHERE id=$1 AND project_id=$2 FOR UPDATE`, data.Id, data.ProjectId)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (r *Repo) Delete(id, projectId int) (*model.DeleteResponse, *model.Good, er
 	defer tx.Rollback()
 
 	// Блокировка
-	_, err = tx.Exec(`SELECT * WHERE id=$1 AND project_id=$2 FOR UPDATE`, id, projectId)
+	_, err = tx.Exec(`SELECT * FROM goods WHERE id=$1 AND project_id=$2 FOR UPDATE`, id, projectId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -147,7 +147,7 @@ func (r *Repo) UpdatePriority(id, projectId, newPriority int) (*model.Reprioriti
 	defer tx.Rollback()
 
 	// Блокировка
-	_, err = tx.Exec(`SELECT * WHERE id=$1 AND project_id=$2 FOR UPDATE`, id, projectId)
+	_, err = tx.Exec(`SELECT * FROM goods WHERE id=$1 AND project_id=$2 FOR UPDATE`, id, projectId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -165,7 +165,7 @@ func (r *Repo) UpdatePriority(id, projectId, newPriority int) (*model.Reprioriti
 	goods = append(goods, good)
 
 	// Блокировка
-	_, err = tx.Exec(`SELECT * WHERE id > $1 FOR UPDATE`, id)
+	_, err = tx.Exec(`SELECT * FROM goods WHERE id > $1 FOR UPDATE`, id)
 	if err != nil {
 		return nil, nil, err
 	}

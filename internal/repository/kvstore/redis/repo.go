@@ -50,3 +50,7 @@ func (r *Repo) GetList(ctx context.Context, key string) (*goods.GetResponse, err
 
 	return res, nil
 }
+
+func (r *Repo) EraseAll(ctx context.Context) error {
+	return r.storage.FlushDB(ctx).Err()
+}
