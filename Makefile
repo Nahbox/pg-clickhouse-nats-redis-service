@@ -18,9 +18,6 @@ service:
 
 all: infra service
 
-tmp:
-	go run cmd/consumer/main.go &
-
 clean:
 	docker compose down &
 	pkill -f "go run cmd/consumer/main.go" &
